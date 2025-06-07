@@ -16,6 +16,7 @@ h2, h3, h4 {
     color: #f3f3f3;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
 }
 
 #player-form {
@@ -65,7 +66,7 @@ input[type="number"] {
 }
 
 button {
-    /* Keep button colors as previously defined */
+    box-sizing: border-box;
 }
 
 .buyin-btn {
@@ -82,6 +83,7 @@ button {
     box-shadow: 0 1px 3px rgba(26,127,55,0.08);
     flex: 1;
     min-width: 60px;
+    box-sizing: border-box;
 }
 
 .buyin-btn:hover, .buyin-btn:focus {
@@ -102,6 +104,7 @@ button {
     transition: background 0.2s;
     flex: 1;
     min-width: 60px;
+    box-sizing: border-box;
 }
 
 .buyin-clear-btn:hover {
@@ -188,6 +191,7 @@ button {
     min-width: auto;
     margin: 0;
     flex: 1;
+    box-sizing: border-box;
 }
 
 /* Responsive adjustments */
@@ -222,6 +226,7 @@ button {
     .buyin-btn, .buyin-clear-btn {
         padding: 0.4rem 0.8rem;
         font-size: 0.9rem;
+        min-width: 0;
     }
 
     #buyin-amount {
@@ -511,6 +516,7 @@ button:disabled {
     text-align: left;
     border-bottom: 1px solid #444;
     color: #f3f3f3;
+    box-sizing: border-box;
 }
 
 #allTimeStatsTable th {

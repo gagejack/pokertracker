@@ -84,7 +84,12 @@
     font-style: italic;
 }
 
-html, body {
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
     font-family: 'Figtree', Arial, sans-serif;
     background: #181a1b;
     color: #f3f3f3;
@@ -92,4 +97,7 @@ html, body {
     padding: 0;
     font-size: 1rem;
     font-weight: 400;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
 } 
