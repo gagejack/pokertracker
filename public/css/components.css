@@ -1,0 +1,577 @@
+/* Subheadings (if used) */
+h2, h3, h4 {
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+#session-controls,
+#add-player-form,
+#player-list,
+#session-stats,
+#alltime-stats {
+    background: #23272a;
+    color: #f3f3f3;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#player-form {
+    position: relative;
+}
+
+#player-name,
+input[type="text"],
+input[type="number"] {
+    background: #23272a;
+    color: #f3f3f3;
+    border: 1px solid #444;
+    padding: 1rem 0.8rem;
+    border-radius: 6px;
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 0.5rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 400;
+}
+
+#buyin-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    flex-wrap: wrap;
+}
+
+#buyin-amount {
+    min-width: 3.5em;
+    text-align: right;
+    font-weight: bold;
+    font-size: 1.3rem;
+    color: #1a7f37;
+    background: #1e2b22;
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    margin-right: 0.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    letter-spacing: 0.5px;
+}
+
+button {
+    /* Keep button colors as previously defined */
+}
+
+.buyin-btn {
+    background: #1a7f37;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1.1rem;
+    font-size: 1.1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(26,127,55,0.08);
+    flex: 1;
+    min-width: 60px;
+}
+
+.buyin-btn:hover, .buyin-btn:focus {
+    background: #14662b;
+    outline: none;
+}
+
+.buyin-clear-btn {
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1.1rem;
+    font-size: 1.1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex: 1;
+    min-width: 60px;
+}
+
+.buyin-clear-btn:hover {
+    background: #bb2d3b;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #2c3136;
+    border: 1px solid #444;
+    border-radius: 0 0 6px 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.autocomplete-suggestion {
+    padding: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.autocomplete-suggestion:hover {
+    background: #3c4146;
+}
+
+#player-list {
+    background: #23272a;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.player-list-header,
+.player-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+    gap: 1rem;
+    padding: 0.8rem;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+.player-list-header {
+    font-weight: bold;
+    background: #2c3136;
+    border-radius: 6px 6px 0 0;
+}
+
+.player-row:last-child {
+    border-bottom: none;
+}
+
+.player-name {
+    font-weight: 500;
+    color: #fff;
+}
+
+.player-buyin {
+    font-weight: 600;
+    color: #1a7f37;
+}
+
+.player-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.player-actions button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    min-width: auto;
+    margin: 0;
+}
+
+/* Update existing button styles to be more compact */
+.rebuy-btn, .cashout-btn, .remove-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    min-width: auto;
+    margin: 0;
+    flex: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 599px) {
+    .player-list-header,
+    .player-row {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .player-actions {
+        flex-direction: column;
+    }
+
+    .player-actions button {
+        width: 100%;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 1rem;
+    }
+
+    .form-group input {
+        padding: 0.6rem;
+    }
+
+    .buyin-btn, .buyin-clear-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    #buyin-amount {
+        font-size: 1.1rem;
+        padding: 0.2rem 0.5rem;
+    }
+}
+
+#session-stats, #alltime-stats {
+    background: #23272a;
+    color: #f3f3f3;
+}
+
+button:disabled {
+    background: #cccccc;
+    color: #888888;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.session-btn {
+    background: #23272a;
+    color: #fff;
+    border: .1px solid #fff;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    transition: background 0.2s, border 0.2s;
+}
+
+.session-btn:hover,
+.session-btn:focus {
+    background: #31363b;
+    border-color: #fff;
+    outline: none;
+}
+.session-btn:disabled {
+    background: #444;
+    color: #bbb;
+    border-color: #888;
+    cursor: not-allowed;
+}
+
+.remove-btn {
+    background: #dc354600;
+    color: #ff0000;
+    border: .1px solid #ff0000;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    transition: background 0.2s, border 0.2s;
+}
+
+.remove-btn:hover,
+.remove-btn:focus {
+    background: #bb2d3b73;
+    box-shadow: 0 0 10px 0 rgba(255, 0, 0, 0.5);
+    outline: none;
+}
+
+.remove-btn:disabled {
+    background: #444;
+    color: #bbb;
+    border-color: #888;
+    cursor: not-allowed;
+}
+
+.rebuy-btn {
+    background: #1a7f3700;
+    color: #1a7f37;
+    border: .1px solid #1a7f37;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    transition: background 0.2s, border 0.2s;
+}
+
+.rebuy-btn:hover,
+.rebuy-btn:focus {
+    background: #1a7f3773;
+    box-shadow: 0 0 10px 0 rgba(26, 127, 55, 0.5);
+    outline: none;
+}
+
+.rebuy-btn:disabled {
+    background: #444;
+    color: #bbb;
+    border-color: #888;
+    cursor: not-allowed;
+}
+
+.cashout-btn {
+    background: #0d6efd00;
+    color: #0d6efd;
+    border: .1px solid #0d6efd;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    transition: background 0.2s, border 0.2s;
+}
+
+.cashout-btn:hover,
+.cashout-btn:focus {
+    background: #0d6efd73;
+    box-shadow: 0 0 10px 0 rgba(13, 110, 253, 0.5);
+    outline: none;
+}
+
+.cashout-btn:disabled {
+    background: #444;
+    color: #bbb;
+    border-color: #888;
+    cursor: not-allowed;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.player-stats {
+    background: #2c3136;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.player-stats h3 {
+    margin-top: 0;
+    color: #fff;
+    border-bottom: 1px solid #444;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.player-stats p {
+    margin: 0.5rem 0;
+    color: #f3f3f3;
+}
+
+.profit {
+    color: #1a7f37;
+    font-weight: 600;
+}
+
+.loss {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.session-stats {
+    background: #2c3136;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.session-stats p {
+    margin: 0.5rem 0;
+    color: #f3f3f3;
+    font-size: 1.1rem;
+}
+
+.session-stats p:first-child {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+/* All Players Stats Section */
+.all-players-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.player-stats {
+    background: var(--surface-color);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.player-stats h3 {
+    margin: 0 0 15px 0;
+    color: var(--text-color);
+    font-size: 1.2em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.stat-value {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.stat-value.profit {
+    color: var(--success-color);
+}
+
+.stat-value.loss {
+    color: var(--error-color);
+} 
+
+/* Stats Table Component */
+.stats-section {
+    margin: 2rem auto;
+    padding: 1rem;
+    max-width: 1200px;
+}
+
+.stats-section h2 {
+    color: #fff;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.stats-table-container {
+    overflow-x: auto;
+    background: #23272a;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#allTimeStatsTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+#allTimeStatsTable th,
+#allTimeStatsTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    color: #f3f3f3;
+}
+
+#allTimeStatsTable th {
+    background-color: #2c3136;
+    font-weight: 600;
+    color: #fff;
+}
+
+#allTimeStatsTable tr:hover {
+    background-color: #2c3136;
+}
+
+#allTimeStatsTable td:nth-child(4),
+#allTimeStatsTable td:nth-child(5),
+#allTimeStatsTable td:nth-child(6),
+#allTimeStatsTable td:nth-child(7) {
+    text-align: right;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #23272a;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #fff;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 4px;
+    border: 1px solid #444;
+    background: #2c3136;
+    color: #fff;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #0d6efd;
+} 

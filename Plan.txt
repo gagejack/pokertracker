@@ -1,0 +1,99 @@
+Poker Session Tracker — Project Plan
+
+Stack:
+- HTML: Structure the web pages
+- CSS: Style the website
+- JavaScript: Add interactivity and logic
+- Data Storage: Use a database (e.g., SQLite or a simple cloud-based DB) to store player stats and accounts persistently
+
+Development Philosophy:
+- Prioritize modular, maintainable, and debuggable code from the start.
+- Build in small, testable pieces to catch errors early and simplify debugging.
+- Use clear structure, naming, and comments throughout.
+- Build a little, test a little: after each small addition, test the feature before moving on.
+- Design for mobile first: the site must be mobile-friendly and easy to use on phones.
+
+Step-by-Step Plan:
+
+1. Project Setup
+   - Create a project folder with the following files:
+     - index.html
+     - style.css
+     - script.js
+     - (this Plan.txt for reference)
+   - Set up a basic folder structure if needed for future modularization (e.g., /js, /css).
+
+1.5. Choose and Integrate a Database
+   - Select a simple database solution (e.g., SQLite for local, or a beginner-friendly cloud DB)
+   - Set up the database to store player accounts and stats persistently
+   - Update the project to connect to and use the database for all player/account/stat storage
+
+2. Build the Basic Webpage Structure (index.html)
+   - Add a title and header
+   - Add sections for:
+     - Session controls (Start/End Session)
+     - Player list
+     - Add player form
+     - Session statistics
+     - All-time statistics
+   - Use semantic HTML for clarity and maintainability.
+
+3. Add Basic Styling (style.css)
+   - Style the layout for clarity and usability
+   - Make buttons and forms look clean and easy to use
+   - Keep styles modular and organized for easy updates
+   - Use responsive, mobile-first CSS to ensure the site works well on all devices
+
+4. Implement Core Functionality (script.js)
+   - Write JavaScript in small, modular functions (e.g., addPlayer, removePlayer, updateStats)
+   - Add player: Input name and buy-in, add to player list
+   - Player account selection: When adding a player, allow users to select from existing 
+   player accounts (dropdown) or enter a new name. Save new player accounts to the database 
+   so they appear in the dropdown for future sessions. Prevent duplicate player entries and 
+   ensure accurate all-time tracking. Store and manage a list of unique player accounts 
+   (using the database).
+   - Remove player: Remove from session
+   - Add money: Increase a player's buy-in
+   - Cash out: Input cashout amount, calculate net result
+   - Start/End session: Reset or finalize session data
+   - Test each function as you build it to catch errors early
+   - Use clear variable and function names, and add comments
+
+5. Display and Update Data
+   - Show player list with current buy-ins and actions
+   - Show session statistics (buy-ins, cashouts, net results)
+   - Show all-time statistics (using the database)
+   - Keep display logic modular and separated from data logic
+
+6. Save and Load Data
+   - Use the database to save all-time stats
+   - Load stats and player accounts from the database when the page is opened
+   - Write separate functions for saving and loading data
+
+7. Test All Features
+   - Add, remove, and update players
+   - Start and end sessions
+   - Check that stats persist after refreshing the page
+   - Debug and fix issues as they arise
+
+8. Polish and Improve
+   - Refine UI/UX
+   - Add helpful messages or error handling
+   - (Optional) Add more features or polish as desired
+
+9. Optimize and Modularize Code
+   - Refactor code for readability and maintainability
+   - Break JavaScript into functions and modules where appropriate
+   - Use clear naming conventions and comments
+   - Remove unused code and optimize for performance
+
+Tips:
+- Build and test one feature at a time.
+- Use comments in your code to keep things clear.
+- Write modular, reusable code for easier updates and debugging.
+- Debug as you go, not just at the end.
+- Build a little, test a little: test each small change before moving forward.
+- Always test on mobile devices or with browser mobile emulation.
+- Refer back to this plan as you work.
+
+Let's get started! 

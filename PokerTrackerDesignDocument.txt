@@ -1,0 +1,41 @@
+Poker Buy-in Calculator
+
+Functionality
+---
+Main Page Screen
+Start Session / End Session
+
+	Player A - (Total Buy in $) (add money button) (cash out button) (remove player button)
+	Player B - (Total Buy in $) (add money button) (cash out button) (remove player button)
+	Player X - (Total Buy in $) (add money button) (cash out button) (remove player button)
+	Add Player Button
+ 	- (insert name) (insert buy in)
+
+
+Functions
+---
+Labels 
+-- 
+(Total Buy in $) - display the players total buy in amount.
+Text Fields
+--
+(insert name) - input player name, track it.
+(insert buy in) - input player buy in, assign it to the player stats.
+Buttons
+--
+(add money button) - Add the amount of money to the players total buy in.
+(cash out button) - input the players balance in winnings, then subtract the players total buy in. This will equal the amount to be cashed out.
+(remove player button) - Delete player from the session.
+
+Tracked Statistics
+---
+Track players all time
+track players buy ins all time
+track players total winnings all time. (Total cashouts - buy ins)
+
+New Feature: Player Account Selection
+---
+- When adding a player, users can select an existing player from a dropdown or enter a new name.
+- Once a player is added (e.g., "Gage"), their account is saved in the system and will appear in the dropdown for future sessions.
+- This prevents duplicate player entries and ensures accurate all-time tracking.
+- The system should store and manage a list of unique player accounts.
