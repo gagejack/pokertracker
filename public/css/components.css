@@ -479,12 +479,15 @@ button:disabled {
     margin: 2rem auto;
     padding: 1rem;
     max-width: 1200px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .stats-section h2 {
     color: #fff;
     margin-bottom: 1rem;
     text-align: center;
+    width: 100%;
 }
 
 .stats-table-container {
@@ -492,6 +495,8 @@ button:disabled {
     background: #23272a;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    margin: 0 auto;
 }
 
 #allTimeStatsTable {
