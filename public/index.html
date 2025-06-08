@@ -91,16 +91,15 @@
     <!-- Transfer Amount Modal -->
     <div id="transferModal" class="modal" style="display: none;">
         <div class="modal-content">
-            <h2>Buy from Player</h2>
+            <h2>Select Buyer (Yourself)</h2>
             <form id="transferForm">
                 <div class="form-group">
-                    <label>Select Buyer:</label>
                     <div id="buyerList" class="buyer-list">
                         <!-- Buyer options will be populated here -->
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="transferAmount">Amount to Transfer ($)</label>
+                    <label for="transferAmount">Amount to Buy ($)</label>
                     <input type="number" id="transferAmount" required min="1" step="1">
                 </div>
                 <button type="submit" class="session-btn">Confirm Transfer</button>
