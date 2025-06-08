@@ -10,6 +10,10 @@ let sessionStats = {
 };
 let currentBuyinAmount = 0;
 let authToken = null;
+let currentTransferFrom = null;
+let selectedBuyer = null;
+let currentCashoutPlayer = null;
+let currentRebuyPlayer = null;
 
 // Update API URL to match server routes
 const API_URL = '/api';
@@ -71,9 +75,68 @@ window.addEventListener('DOMContentLoaded', () => {
     setupBuyinControls();
     setupResetButton();
     setupLoginForm();
+    // Add event listener for cashout form after DOM is loaded
+    document.getElementById('cashoutForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const amount = parseFloat(document.getElementById('cashoutAmount').value);
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid cashout amount.');
+            return;
+        }
+        
+        if (currentCashoutPlayer) {
+            await handleCashout(currentCashoutPlayer, amount);
+        }
+        closeCashoutModal();
+    });
+    // Add event listener for rebuy form after DOM is loaded
+    document.getElementById('rebuyForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const amount = parseFloat(document.getElementById('rebuyAmount').value);
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid rebuy amount.');
+            return;
+        }
+
+        if (currentRebuyPlayer) {
+            await handleRebuy(currentRebuyPlayer, amount);
+        }
+        closeRebuyModal();
+    });
     renderAllTimeStats();
     updateAllTimeStats();
+    // Add event listener for transfer form after DOM is loaded
+    document.getElementById('transferForm').addEventListener('submit', handleTransfer);
+
+    // Setup controls for Cashout and Rebuy Modals
+    setupModalAmountControls('cashoutAmount', 'cashout-controls', 'cashout-clear-btn');
+    setupModalAmountControls('rebuyAmount', 'rebuy-controls', 'rebuy-clear-btn');
 });
+
+// Generic function to set up amount controls for modals
+function setupModalAmountControls(amountInputId, controlsContainerId, clearButtonId) {
+    const amountInput = document.getElementById(amountInputId);
+    const controlsContainer = document.getElementById(controlsContainerId);
+    const clearBtn = document.getElementById(clearButtonId);
+
+    if (!amountInput || !controlsContainer || !clearBtn) {
+        console.error(`Missing elements for modal amount controls: ${amountInputId}, ${controlsContainerId}, ${clearButtonId}`);
+        return;
+    }
+
+    controlsContainer.querySelectorAll('.buyin-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const increment = parseInt(btn.dataset.inc);
+            let currentAmount = parseFloat(amountInput.value) || 0;
+            currentAmount += increment;
+            amountInput.value = currentAmount;
+        });
+    });
+
+    clearBtn.addEventListener('click', () => {
+        amountInput.value = 0;
+    });
+}
 
 // --- API Functions ---
 async function loadPlayerStats() {
@@ -304,8 +367,9 @@ function renderPlayerList() {
                     <span class="player-name">${name}</span>
                     <span class="player-buyin">$${buyin}</span>
                     <div class="player-actions">
-                        <button class="rebuy-btn" onclick="handleRebuy('${name}')">Rebuy</button>
-                        <button class="cashout-btn" onclick="handleCashout('${name}')">Cash Out</button>
+                        <button class="rebuy-btn" onclick="showRebuyModal('${name}')">Rebuy</button>
+                        <button class="cashout-btn" onclick="showCashoutModal('${name}')">Cash Out</button>
+                        <button class="transfer-btn" onclick="showTransferModal('${name}')">Buy from Player</button>
                         <button class="remove-btn" onclick="handleRemove('${name}')">Remove</button>
                     </div>
                 </div>
@@ -402,8 +466,8 @@ async function updateAllTimeStats() {
 }
 
 // Player action handlers
-async function handleRebuy(playerName) {
-    const amount = parseInt(prompt('Enter rebuy amount:'));
+async function handleRebuy(playerName, specifiedAmount = null) {
+    const amount = specifiedAmount || parseInt(prompt('Enter rebuy amount:'));
     if (amount && amount > 0) {
         try {
             // Update session player's buy-in
@@ -431,60 +495,90 @@ async function handleRebuy(playerName) {
     }
 }
 
-async function handleCashout(playerName) {
-    const amount = parseInt(prompt('Enter cashout amount:'));
-    if (amount && amount > 0) {
-        try {
-            // Update session player's cashout
-            const sessionPlayer = sessionPlayers.find(p => p.name === playerName);
-            if (!sessionPlayer) {
-                throw new Error('Player not found in current session');
-            }
+// Rebuy Modal Functions
+function showRebuyModal(playerName) {
+    currentRebuyPlayer = playerName;
+    document.getElementById('rebuyModal').style.display = 'block';
+    document.getElementById('rebuyAmount').value = ''; // Clear previous amount
+}
 
-            // Ensure player stats exist
-            if (!playerStats[playerName]) {
-                // Try to load player stats from database
-                const response = await fetch(`${API_URL}/players/${playerName}`);
-                if (!response.ok) {
-                    throw new Error('Failed to load player stats');
-                }
-                const player = await response.json();
-                playerStats[playerName] = player.stats;
-            }
+function closeRebuyModal() {
+    document.getElementById('rebuyModal').style.display = 'none';
+    currentRebuyPlayer = null;
+}
 
-            sessionStats.totalCashouts += amount;
-            // Calculate profit/loss for this session
-            const sessionProfit = amount - sessionPlayer.buyin;
-            // Remove player from session
-            sessionPlayers = sessionPlayers.filter(p => p.name !== playerName);
+// Cashout Modal Functions
+function showCashoutModal(playerName) {
+    currentCashoutPlayer = playerName;
+    document.getElementById('cashoutModal').style.display = 'block';
+    document.getElementById('cashoutAmount').value = ''; // Clear previous amount
+}
 
-            // Update player's stats in database
-            const stats = playerStats[playerName];
-            stats.totalCashouts += amount;
-            // Update net profit as total cashouts minus total buyins
-            stats.netProfit = stats.totalCashouts - stats.totalBuyins;
-            
-            // Calculate win/loss for this session
-            if (sessionProfit > 0) {
-                // Only update biggest win if there was a profit this session
-                stats.biggestWin = Math.max(stats.biggestWin, sessionProfit);
-            } else if (sessionProfit < 0) {
-                // Update biggest loss if there was a loss this session
-                stats.biggestLoss = Math.max(stats.biggestLoss, Math.abs(sessionProfit));
-            }
-            
-            await updatePlayerStats(playerName, stats);
+function closeCashoutModal() {
+    document.getElementById('cashoutModal').style.display = 'none';
+    currentCashoutPlayer = null;
+}
 
-            // Update UI
-            renderPlayerList();
-            updateSessionStats();
-            renderAllTimeStats();
-            
-            saveSessionState(); // Save state after cashout
-        } catch (error) {
-            console.error('Error processing cashout:', error);
-            alert('Failed to process cashout: ' + error.message);
+async function handleCashout(playerName, amount) {
+    try {
+        // Update session player's cashout
+        const sessionPlayer = sessionPlayers.find(p => p.name === playerName);
+        if (!sessionPlayer) {
+            throw new Error('Player not found in current session');
         }
+
+        // Calculate new balance after cashout
+        const newBalance = sessionPlayer.buyin - amount;
+        
+        // Ensure player stats exist
+        if (!playerStats[playerName]) {
+            // Try to load player stats from database
+            const response = await fetch(`${API_URL}/players/${playerName}`);
+            if (!response.ok) {
+                throw new Error('Failed to load player stats');
+            }
+            const player = await response.json();
+            playerStats[playerName] = player.stats;
+        }
+
+        sessionStats.totalCashouts += amount;
+        // Calculate profit/loss for this session
+        const sessionProfit = amount - sessionPlayer.buyin;
+        
+        // Update player's buyin amount
+        sessionPlayer.buyin = newBalance;
+
+        // Update player's stats in database
+        const stats = playerStats[playerName];
+        stats.totalCashouts += amount;
+        // Update net profit as total cashouts minus total buyins
+        stats.netProfit = stats.totalCashouts - stats.totalBuyins;
+        
+        // Calculate win/loss for this session
+        if (sessionProfit > 0) {
+            // Only update biggest win if there was a profit this session
+            stats.biggestWin = Math.max(stats.biggestWin, sessionProfit);
+        } else if (sessionProfit < 0) {
+            // Update biggest loss if there was a loss this session
+            stats.biggestLoss = Math.max(stats.biggestLoss, Math.abs(sessionProfit));
+        }
+        
+        await updatePlayerStats(playerName, stats);
+
+        // Only remove player if their balance is 0 or less
+        if (newBalance <= 0) {
+            sessionPlayers = sessionPlayers.filter(p => p.name !== playerName);
+        }
+
+        // Update UI
+        renderPlayerList();
+        updateSessionStats();
+        renderAllTimeStats();
+        
+        saveSessionState(); // Save state after cashout
+    } catch (error) {
+        console.error('Error processing cashout:', error);
+        alert('Failed to process cashout: ' + error.message);
     }
 }
 
@@ -496,12 +590,14 @@ async function handleRemove(playerName) {
             if (sessionPlayer) {
                 // Update player's stats in database before removing from session
                 const stats = playerStats[playerName];
-                // Count the full buy-in as a loss when removing without cashout
-                stats.biggestLoss = Math.max(stats.biggestLoss, sessionPlayer.buyin);
-                await updatePlayerStats(playerName, stats);
+                if (stats) {
+                    // Count the full buy-in as a loss when removing without cashout
+                    stats.biggestLoss = Math.max(stats.biggestLoss, sessionPlayer.buyin);
+                    await updatePlayerStats(playerName, stats);
+                }
             }
 
-            // Remove from session players only
+            // Remove only the specified player from session players
             sessionPlayers = sessionPlayers.filter(player => player.name !== playerName);
             
             // Update UI
@@ -633,4 +729,104 @@ function setupResetButton() {
             }
         });
     }
+}
+
+function showTransferModal(playerId) {
+    currentTransferFrom = playerId;
+    selectedBuyer = null;
+    document.getElementById('transferModal').style.display = 'block';
+    document.getElementById('transferAmount').value = '';
+    
+    // Populate buyer list
+    const buyerList = document.getElementById('buyerList');
+    buyerList.innerHTML = sessionPlayers
+        .filter(player => player.name !== playerId) // Exclude the seller
+        .map(player => `
+            <div class="buyer-option" onclick="selectBuyer('${player.name}')">
+                ${player.name}
+            </div>
+        `).join('');
+}
+
+function selectBuyer(buyerName) {
+    selectedBuyer = buyerName;
+    // Update visual selection
+    const buyerOptions = document.querySelectorAll('.buyer-option');
+    buyerOptions.forEach(option => {
+        if (option.textContent.trim() === buyerName) {
+            option.classList.add('selected');
+        } else {
+            option.classList.remove('selected');
+        }
+    });
+}
+
+function closeTransferModal() {
+    document.getElementById('transferModal').style.display = 'none';
+    currentTransferFrom = null;
+    selectedBuyer = null;
+}
+
+async function handleTransfer(event) {
+    event.preventDefault();
+    
+    if (!selectedBuyer) {
+        alert('Please select a buyer first');
+        return;
+    }
+
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+    if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+    }
+
+    try {
+        // First, cash out the seller
+        const seller = sessionPlayers.find(p => p.name === currentTransferFrom);
+        if (!seller) {
+            alert('Seller not found');
+            return;
+        }
+
+        // Temporarily store the amount for the rebuy
+        const transferAmount = amount;
+
+        // Call handleCashout for the seller
+        await handleCashout(currentTransferFrom, transferAmount);
+
+        // Then, rebuy the buyer
+        const buyer = sessionPlayers.find(p => p.name === selectedBuyer);
+        if (!buyer) {
+            alert('Buyer not found');
+            return;
+        }
+
+        // Call handleRebuy for the buyer with the same amount
+        await handleRebuy(selectedBuyer, transferAmount);
+
+        // Close the transfer modal
+        closeTransferModal();
+    } catch (error) {
+        console.error('Error processing transfer:', error);
+        alert('Failed to process transfer: ' + error.message);
+    }
+}
+
+// Update the createPlayerElement function to include the transfer button
+function createPlayerElement(player) {
+    const playerDiv = document.createElement('div');
+    playerDiv.className = 'player-item';
+    playerDiv.innerHTML = `
+        <div class="player-info">
+            <span class="player-name">${player.name}</span>
+            <span class="player-buyin">$${player.buyin}</span>
+        </div>
+        <div class="player-controls">
+            <button onclick="handleRebuy('${player.name}')" class="session-btn">Rebuy</button>
+            <button onclick="handleCashout('${player.name}')" class="session-btn">Cash Out</button>
+            ${player.name !== currentUserId ? `<button onclick="showTransferModal('${player.name}')" class="session-btn">Buy from Player</button>` : ''}
+        </div>
+    `;
+    return playerDiv;
 } 

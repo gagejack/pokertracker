@@ -556,6 +556,11 @@ button:disabled {
     border-radius: 8px;
     width: 90%;
     max-width: 400px;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .modal-content h2 {
@@ -585,4 +590,62 @@ button:disabled {
 .form-group input:focus {
     outline: none;
     border-color: #0d6efd;
+}
+
+.buyer-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.buyer-option {
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.buyer-option:hover {
+    border-color: #666;
+    background-color: #f5f5f5;
+}
+
+.buyer-option.selected {
+    border-color: #4CAF50;
+    background-color: #e8f5e9;
+    font-weight: bold;
+}
+
+.transfer-btn {
+    background: #6f42c100;
+    color: #6f42c1;
+    border: .1px solid #6f42c1;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    transition: background 0.2s, border 0.2s;
+}
+
+.transfer-btn:hover,
+.transfer-btn:focus {
+    background: #6f42c173;
+    box-shadow: 0 0 10px 0 rgba(111, 66, 193, 0.5);
+    outline: none;
+}
+
+.transfer-btn:disabled {
+    background: #444;
+    color: #bbb;
+    border-color: #888;
+    cursor: not-allowed;
 } 
