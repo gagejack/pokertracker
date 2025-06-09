@@ -229,6 +229,71 @@ app.post('/api/reset-stats', authenticateToken, async (req, res) => {
   }
 });
 
+// Add this after the other API routes
+app.put('/api/stats/:gameType/:playerName', authenticateToken, async (req, res) => {
+    try {
+        const { gameType, playerName } = req.params;
+        const stats = req.body;
+
+        console.log('Updating stats for:', { gameType, playerName, stats });
+
+        // Validate the stats object
+        if (!stats || typeof stats !== 'object') {
+            console.log('Invalid stats data received:', stats);
+            return res.status(400).json({ message: 'Invalid stats data' });
+        }
+
+        // Validate required fields
+        const requiredFields = ['totalSessions', 'totalBuyins', 'totalCashouts', 'biggestWin', 'biggestLoss'];
+        const missingFields = requiredFields.filter(field => !(field in stats));
+        if (missingFields.length > 0) {
+            console.log('Missing required fields:', missingFields);
+            return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
+        }
+
+        // Validate numeric values
+        for (const field of requiredFields) {
+            if (isNaN(stats[field])) {
+                console.log(`Invalid numeric value for ${field}:`, stats[field]);
+                return res.status(400).json({ message: `Invalid numeric value for ${field}` });
+            }
+        }
+
+        // Find and update the player
+        const player = await Player.findOneAndUpdate(
+            { name: playerName },
+            { 
+                $set: {
+                    stats: {
+                        totalSessions: parseInt(stats.totalSessions),
+                        totalBuyins: parseFloat(stats.totalBuyins),
+                        totalCashouts: parseFloat(stats.totalCashouts),
+                        netProfit: parseFloat(stats.totalCashouts) - parseFloat(stats.totalBuyins),
+                        biggestWin: parseFloat(stats.biggestWin),
+                        biggestLoss: parseFloat(stats.biggestLoss)
+                    }
+                }
+            },
+            { new: true }
+        );
+
+        if (!player) {
+            console.log('Player not found:', playerName);
+            return res.status(404).json({ message: 'Player not found' });
+        }
+
+        console.log('Successfully updated stats for player:', playerName);
+        res.json(player);
+    } catch (error) {
+        console.error('Error updating player stats:', error);
+        res.status(500).json({ 
+            message: 'Error updating player stats',
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

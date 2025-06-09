@@ -14,9 +14,30 @@ let currentTransferFrom = null;
 let selectedBuyer = null;
 let currentCashoutPlayer = null;
 let currentRebuyPlayer = null;
+let isAdmin = false;
+let pendingAction = null;
 
 // Update API URL to match server routes
 const API_URL = '/api';
+
+// Tab Switching Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const gameContents = document.querySelectorAll('.game-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            gameContents.forEach(content => content.classList.remove('active'));
+
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            const tabName = button.getAttribute('data-tab');
+            document.getElementById(`${tabName}-content`).classList.add('active');
+        });
+    });
+});
 
 // Function to save session state to localStorage
 function saveSessionState() {
@@ -111,6 +132,110 @@ window.addEventListener('DOMContentLoaded', () => {
     // Setup controls for Cashout and Rebuy Modals
     setupModalAmountControls('cashoutAmount', 'cashout-controls', 'cashout-clear-btn');
     setupModalAmountControls('rebuyAmount', 'rebuy-controls', 'rebuy-clear-btn');
+
+    // Edit Stats button listeners
+    document.getElementById('edit-stats-btn').addEventListener('click', () => showEditStatsModal('poker'));
+    document.getElementById('blackjack-edit-stats-btn').addEventListener('click', () => showEditStatsModal('blackjack'));
+    
+    // Player select change listener
+    document.getElementById('editPlayerSelect').addEventListener('change', function() {
+        const gameType = document.querySelector('.game-content.active').id.split('-')[0];
+        populateEditForm(this.value, gameType);
+    });
+    
+    // Edit stats form submit listener
+    document.getElementById('editStatsForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const gameType = document.querySelector('.game-content.active').id.split('-')[0];
+        const playerName = document.getElementById('editPlayerSelect').value;
+        
+        // Validate form values
+        const totalSessions = parseInt(document.getElementById('editTotalSessions').value);
+        const totalBuyins = parseFloat(document.getElementById('editTotalBuyins').value);
+        const totalCashouts = parseFloat(document.getElementById('editTotalCashouts').value);
+        const biggestWin = parseFloat(document.getElementById('editBiggestWin').value);
+
+        // Validate numeric values
+        if (isNaN(totalSessions) || isNaN(totalBuyins) || isNaN(totalCashouts) || isNaN(biggestWin)) {
+            alert('Please enter valid numbers for all fields');
+            return;
+        }
+
+        const stats = {
+            totalSessions,
+            totalBuyins,
+            totalCashouts,
+            netProfit: totalCashouts - totalBuyins,
+            biggestWin
+        };
+        
+        try {
+            console.log('Sending stats update request:', { gameType, playerName, stats });
+            
+            const response = await fetch(`${API_URL}/stats/${gameType}/${encodeURIComponent(playerName)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(stats)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                console.log('Stats updated successfully:', data);
+                // Refresh the stats display
+                await loadAllTimeStats(gameType);
+                closeEditStatsModal();
+                alert('Stats updated successfully');
+            } else {
+                console.error('Failed to update stats:', data);
+                alert('Failed to update stats: ' + (data.message || 'Please try again'));
+            }
+        } catch (error) {
+            console.error('Error updating stats:', error);
+            alert('An error occurred while updating stats: ' + error.message);
+        }
+    });
+
+    // Haptic Feedback Function
+    function vibrate(duration = 50) {
+        if ('vibrate' in navigator) {
+            navigator.vibrate(duration);
+        }
+    }
+
+    // Add haptic feedback to all buttons
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', () => vibrate());
+    });
+
+    // Add haptic feedback to form submissions
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', () => vibrate(100)); // Longer vibration for form submissions
+    });
+
+    // Add haptic feedback to tab buttons with a different pattern
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', () => vibrate(30)); // Shorter vibration for tabs
+    });
+
+    // Add haptic feedback to buyin buttons with a different pattern
+    document.querySelectorAll('.buyin-btn').forEach(button => {
+        button.addEventListener('click', () => vibrate(40)); // Medium vibration for buyin buttons
+    });
+
+    // Add haptic feedback to clear buttons
+    document.querySelectorAll('.buyin-clear-btn').forEach(button => {
+        button.addEventListener('click', () => vibrate(60)); // Longer vibration for clear actions
+    });
+
+    // Add haptic feedback to player action buttons (rebuy, cashout, remove)
+    document.querySelectorAll('.rebuy-btn, .cashout-btn, .remove-btn').forEach(button => {
+        button.addEventListener('click', () => vibrate(70)); // Longer vibration for important actions
+    });
 });
 
 // Generic function to set up amount controls for modals
@@ -188,6 +313,20 @@ async function addPlayer(name, buyinAmount = 0) {
         if (!response.ok) throw new Error('Failed to add player');
         const newPlayer = await response.json();
         playerStats[name] = newPlayer.stats;
+        
+        // Add player to session with isBanker property
+        sessionPlayers.push({
+            name: name,
+            buyin: buyinAmount,
+            isBanker: false
+        });
+        
+        // Update session stats with the new buy-in
+        sessionStats.totalBuyins += buyinAmount;
+        
+        renderPlayerList();
+        updateSessionStats();
+        saveSessionState();
     } catch (error) {
         console.error('Error adding player:', error);
         throw error;
@@ -226,20 +365,12 @@ function setupSessionControls() {
     });
 
     endBtn.addEventListener('click', () => {
-        sessionStats.endTime = new Date();
-        startBtn.disabled = false;
-        endBtn.disabled = true;
-        document.getElementById('add-player-form').style.display = 'none';
-        // Reset session
-        sessionPlayers = [];
-        sessionStats = {
-            totalBuyins: 0,
-            totalCashouts: 0,
-            startTime: null,
-            endTime: null
-        };
-        updateSessionStats();
-        localStorage.removeItem('pokerSession'); // Clear saved session
+        // If there are players in the session, show the cashout modal
+        if (sessionPlayers.length > 0) {
+            showEndSessionModal();
+        } else {
+            endSession();
+        }
     });
 }
 
@@ -305,14 +436,14 @@ function setupAddPlayerForm() {
                     stats.totalBuyins += currentBuyinAmount;
                     stats.netProfit = stats.totalCashouts - stats.totalBuyins;
                     await updatePlayerStats(name, stats);
+                    
+                    // Add to session players
+                    sessionPlayers.push({ name, buyin: currentBuyinAmount, isBanker: false });
+                    sessionStats.totalBuyins += currentBuyinAmount;
                 } else {
                     // Add new player
                     await addPlayer(name, currentBuyinAmount);
                 }
-                
-                // Add to session players
-                sessionPlayers.push({ name, buyin: currentBuyinAmount });
-                sessionStats.totalBuyins += currentBuyinAmount;
                 
                 // Update UI immediately
                 renderPlayerList();
@@ -355,27 +486,41 @@ function setupBuyinControls() {
 
 function renderPlayerList() {
     const playerList = document.getElementById('player-list');
-    playerList.innerHTML = `
-        <div class="player-list-header">
-            <span class="player-name">Player</span>
-            <span class="player-buyin">Buy-in</span>
-            <span class="player-actions">Actions</span>
-        </div>
-        <div class="player-list-content">
-            ${sessionPlayers.map(({ name, buyin }) => `
-                <div class="player-row">
-                    <span class="player-name">${name}</span>
-                    <span class="player-buyin">$${buyin}</span>
-                    <div class="player-actions">
-                        <button class="rebuy-btn" onclick="showRebuyModal('${name}')">Rebuy</button>
-                        <button class="cashout-btn" onclick="showCashoutModal('${name}')">Cash Out</button>
-                        <button class="transfer-btn" onclick="showTransferModal('${name}')">Buy from Player</button>
-                        <button class="remove-btn" onclick="handleRemove('${name}')">Remove</button>
-                    </div>
+    const gameType = document.querySelector('.game-content.active').id.split('-')[0];
+    const listId = gameType === 'poker' ? 'player-list' : 'blackjack-player-list';
+    
+    // Check if any player is banker
+    const hasBanker = sessionPlayers.some(p => p.isBanker);
+    
+    playerList.innerHTML = sessionPlayers.map(player => `
+        <div class="player-card">
+            <div class="player-header">
+                <div class="player-info">
+                    <h3>${player.name}</h3>
+                    <span class="buyin-amount">$${player.buyin}</span>
                 </div>
-            `).join('')}
+                <div class="player-actions">
+                    <button class="banker-btn ${player.isBanker ? 'active' : ''}" 
+                            onclick="toggleBanker('${player.name}')"
+                            ${hasBanker && !player.isBanker ? 'disabled' : ''}>
+                        <i class="fas fa-landmark"></i> Banker
+                    </button>
+                    <button class="rebuy-btn" onclick="showRebuyModal('${player.name}')">
+                        <i class="fas fa-plus"></i> Rebuy
+                    </button>
+                    <button class="cashout-btn" onclick="showCashoutModal('${player.name}')">
+                        <i class="fas fa-money-bill-wave"></i> Cash Out
+                    </button>
+                    <button class="transfer-btn" onclick="showTransferModal('${player.name}')">
+                        <i class="fas fa-exchange-alt"></i> Buy from Player
+                    </button>
+                    <button class="remove-btn" onclick="handleRemove('${player.name}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-    `;
+    `).join('');
 }
 
 function renderAllTimeStats() {
@@ -396,23 +541,23 @@ function renderAllTimeStats() {
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Total Buy-ins:</span>
-                    <span class="stat-value">$${stats.totalBuyins}</span>
+                    <span class="stat-value">${formatCurrency(stats.totalBuyins)}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Total Cash-outs:</span>
-                    <span class="stat-value">$${stats.totalCashouts}</span>
+                    <span class="stat-value">${formatCurrency(stats.totalCashouts)}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Net Profit:</span>
-                    <span class="stat-value ${stats.netProfit >= 0 ? 'profit' : 'loss'}">$${stats.netProfit}</span>
+                    <span class="stat-value ${stats.netProfit >= 0 ? 'profit' : 'loss'}">${formatCurrency(stats.netProfit)}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Biggest Win:</span>
-                    <span class="stat-value profit">$${stats.biggestWin}</span>
+                    <span class="stat-value profit">${formatCurrency(stats.biggestWin || 0)}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Biggest Loss:</span>
-                    <span class="stat-value loss">$${stats.biggestLoss}</span>
+                    <span class="stat-value loss">${formatCurrency(stats.biggestLoss || 0)}</span>
                 </div>
             </div>
         </div>
@@ -421,11 +566,17 @@ function renderAllTimeStats() {
 
 function updateSessionStats() {
     const sessionStatsDiv = document.getElementById('session-stats');
+    const gameType = document.querySelector('.game-content.active').id.split('-')[0];
+    const statsId = gameType === 'poker' ? 'session-stats' : 'blackjack-session-stats';
+    
+    // Calculate bank balance (total buyins - total cashouts)
+    const bankBalance = sessionStats.totalBuyins - sessionStats.totalCashouts;
+    
     sessionStatsDiv.innerHTML = `
         <h3>Current Session</h3>
         <p>Total Buy-ins: $${sessionStats.totalBuyins}</p>
         <p>Total Cash-outs: $${sessionStats.totalCashouts}</p>
-        <p>Net: $${sessionStats.totalCashouts - sessionStats.totalBuyins}</p>
+        <p>Bank Balance: $${bankBalance}</p>
         ${sessionStats.startTime ? `<p>Started: ${sessionStats.startTime.toLocaleTimeString()}</p>` : ''}
     `;
 }
@@ -454,9 +605,9 @@ async function updateAllTimeStats() {
                 <td>${player.stats.totalSessions}</td>
                 <td>${formatCurrency(player.stats.totalBuyins)}</td>
                 <td>${formatCurrency(player.stats.totalCashouts)}</td>
-                <td>${formatCurrency(player.stats.netProfit)}</td>
-                <td>${formatCurrency(player.stats.biggestWin)}</td>
-                <td>${formatCurrency(player.stats.biggestLoss)}</td>
+                <td class="${player.stats.netProfit >= 0 ? 'profit' : 'loss'}">${formatCurrency(player.stats.netProfit)}</td>
+                <td class="profit">${formatCurrency(player.stats.biggestWin || 0)}</td>
+                <td class="loss">${formatCurrency(player.stats.biggestLoss || 0)}</td>
             `;
             statsBody.appendChild(row);
         });
@@ -521,61 +672,94 @@ function closeCashoutModal() {
 
 async function handleCashout(playerName, amount) {
     try {
+        console.log('=== Cashout Process Started ===');
+        console.log('Player:', playerName);
+        console.log('Cashout Amount:', amount);
+
         // Update session player's cashout
         const sessionPlayer = sessionPlayers.find(p => p.name === playerName);
         if (!sessionPlayer) {
+            console.error('Player not found in session:', playerName);
             throw new Error('Player not found in current session');
         }
 
-        // Calculate new balance after cashout
-        const newBalance = sessionPlayer.buyin - amount;
-        
-        // Ensure player stats exist
-        if (!playerStats[playerName]) {
-            // Try to load player stats from database
-            const response = await fetch(`${API_URL}/players/${playerName}`);
-            if (!response.ok) {
-                throw new Error('Failed to load player stats');
-            }
-            const player = await response.json();
-            playerStats[playerName] = player.stats;
+        console.log('Current Player State:', {
+            name: sessionPlayer.name,
+            buyin: sessionPlayer.buyin,
+            currentCashout: sessionPlayer.cashout || 0
+        });
+
+        // Validate amount is not negative
+        if (amount < 0) {
+            console.error('Invalid cashout amount:', amount);
+            throw new Error('Cashout amount cannot be negative');
         }
 
+        // Update the player's cashout amount
+        sessionPlayer.cashout = amount;
         sessionStats.totalCashouts += amount;
-        // Calculate profit/loss for this session
-        const sessionProfit = amount - sessionPlayer.buyin;
         
-        // Update player's buyin amount
-        sessionPlayer.buyin = newBalance;
-
+        console.log('Updated Session Stats:', {
+            totalBuyins: sessionStats.totalBuyins,
+            totalCashouts: sessionStats.totalCashouts
+        });
+        
         // Update player's stats in database
         const stats = playerStats[playerName];
         stats.totalCashouts += amount;
-        // Update net profit as total cashouts minus total buyins
         stats.netProfit = stats.totalCashouts - stats.totalBuyins;
+
+        // Calculate profit/loss for this session
+        const sessionProfit = amount - sessionPlayer.buyin;
         
-        // Calculate win/loss for this session
-        if (sessionProfit > 0) {
-            // Only update biggest win if there was a profit this session
-            stats.biggestWin = Math.max(stats.biggestWin, sessionProfit);
-        } else if (sessionProfit < 0) {
-            // Update biggest loss if there was a loss this session
-            stats.biggestLoss = Math.max(stats.biggestLoss, Math.abs(sessionProfit));
+        // Update biggest win if this session's profit is higher
+        if (sessionProfit > (stats.biggestWin || 0)) {
+            stats.biggestWin = sessionProfit;
+            console.log('New biggest win recorded:', stats.biggestWin);
         }
-        
+
+        // Update biggest loss if player lost money
+        if (amount < sessionPlayer.buyin) {
+            const sessionLoss = sessionPlayer.buyin - amount;
+            if (sessionLoss > (stats.biggestLoss || 0)) {
+                stats.biggestLoss = sessionLoss;
+                console.log('New biggest loss recorded:', stats.biggestLoss);
+            }
+        }
+
+        console.log('Updated Player Stats:', {
+            name: playerName,
+            totalBuyins: stats.totalBuyins,
+            totalCashouts: stats.totalCashouts,
+            netProfit: stats.netProfit,
+            biggestWin: stats.biggestWin,
+            biggestLoss: stats.biggestLoss
+        });
+
         await updatePlayerStats(playerName, stats);
 
-        // Only remove player if their balance is 0 or less
-        if (newBalance <= 0) {
+        // If player cashed out more than their buy-in, remove them from the session
+        if (amount >= sessionPlayer.buyin) {
+            console.log('Player fully cashed out, removing from session');
             sessionPlayers = sessionPlayers.filter(p => p.name !== playerName);
+        } else {
+            // Otherwise, just update their buyin amount
+            const newBuyin = sessionPlayer.buyin - amount;
+            console.log('Updating player buyin:', {
+                oldBuyin: sessionPlayer.buyin,
+                newBuyin: newBuyin
+            });
+            sessionPlayer.buyin = newBuyin;
         }
 
         // Update UI
         renderPlayerList();
         updateSessionStats();
         renderAllTimeStats();
+        updateAllTimeStats();
         
         saveSessionState(); // Save state after cashout
+        console.log('=== Cashout Process Completed ===');
     } catch (error) {
         console.error('Error processing cashout:', error);
         alert('Failed to process cashout: ' + error.message);
@@ -583,34 +767,15 @@ async function handleCashout(playerName, amount) {
 }
 
 async function handleRemove(playerName) {
-    if (confirm(`Are you sure you want to remove ${playerName}?`)) {
-        try {
-            // Get the player's buy-in amount before removing
-            const sessionPlayer = sessionPlayers.find(p => p.name === playerName);
-            if (sessionPlayer) {
-                // Update player's stats in database before removing from session
-                const stats = playerStats[playerName];
-                if (stats) {
-                    // Count the full buy-in as a loss when removing without cashout
-                    stats.biggestLoss = Math.max(stats.biggestLoss, sessionPlayer.buyin);
-                    await updatePlayerStats(playerName, stats);
-                }
-            }
+    if (!confirm(`Are you sure you want to remove ${playerName} from the session?`)) {
+        return;
+    }
 
-            // Remove only the specified player from session players
-            sessionPlayers = sessionPlayers.filter(player => player.name !== playerName);
-            
-            // Update UI
-            renderPlayerList();
-            renderAllTimeStats();
-            updateSessionStats();
-            updateAllTimeStats();
-            
-            saveSessionState(); // Save state after removing player
-        } catch (error) {
-            console.error('Error removing player:', error);
-            alert('Failed to remove player: ' + error.message);
-        }
+    try {
+        await removePlayer(playerName);
+    } catch (error) {
+        console.error('Error removing player:', error);
+        alert('Failed to remove player. Please try again.');
     }
 }
 
@@ -627,11 +792,12 @@ function closeLoginModal() {
 function setupLoginForm() {
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-
+            
             try {
                 console.log('Attempting login...');
                 const response = await fetch(`${API_URL}/admin/login`, {
@@ -641,32 +807,46 @@ function setupLoginForm() {
                     },
                     body: JSON.stringify({ username, password })
                 });
-
+                
                 const data = await response.json();
                 
-                if (!response.ok) {
-                    throw new Error(data.message || 'Login failed');
+                if (response.ok) {
+                    console.log('Login successful, storing token');
+                    authToken = data.token;
+                    isAdmin = true;
+                    closeLoginModal();
+                    
+                    // Handle the pending action after successful login
+                    if (pendingAction) {
+                        if (pendingAction.type === 'edit') {
+                            showEditStatsModal(pendingAction.gameType);
+                        } else if (pendingAction.type === 'reset') {
+                            resetAllStats(pendingAction.gameType);
+                        }
+                        pendingAction = null;
+                    }
+                } else {
+                    alert('Login failed: ' + (data.message || 'Invalid credentials'));
                 }
-
-                console.log('Login successful, storing token');
-                authToken = data.token;
-                closeLoginModal();
-                // Now that we're logged in, proceed with reset
-                await resetStats();
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Login failed: ' + error.message);
+                alert('Login failed: ' + (error.message || 'An error occurred during login'));
             }
         });
     }
 }
 
 // Update reset stats functionality
-async function resetStats() {
+async function resetAllStats(gameType) {
     console.log('Attempting to reset stats...');
     if (!authToken) {
         console.log('No auth token available');
+        pendingAction = { type: 'reset', gameType };
         showLoginModal();
+        return;
+    }
+
+    if (!confirm('Are you sure you want to reset all statistics? This action cannot be undone.')) {
         return;
     }
 
@@ -674,68 +854,46 @@ async function resetStats() {
         const response = await fetch(`${API_URL}/reset-stats`, {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}`
             }
         });
-        
-        console.log('Reset response status:', response.status);
-        
+
         if (!response.ok) {
             const data = await response.json();
-            if (response.status === 401 || response.status === 403) {
-                console.log('Authentication required, showing login modal');
-                authToken = null;
-                showLoginModal();
-                return;
-            }
-            throw new Error(data.message || 'Failed to reset stats');
+            throw new Error(data.message || 'Failed to reset statistics');
         }
-        
-        console.log('Stats reset successful, clearing data...');
-        // Clear local player stats
-        playerStats = {};
-        // Clear session players
-        sessionPlayers = [];
-        // Reset session stats
-        sessionStats = {
-            totalBuyins: 0,
-            totalCashouts: 0,
-            startTime: null,
-            endTime: null
-        };
-        // Update UI
-        renderPlayerList();
+
+        alert('All statistics have been reset successfully.');
+        // Reload the stats
+        await loadPlayerStats();
         renderAllTimeStats();
-        updateSessionStats();
         updateAllTimeStats();
-        alert('All players and their stats have been reset successfully');
     } catch (error) {
         console.error('Error resetting stats:', error);
-        alert('Failed to reset stats: ' + error.message);
+        alert('Failed to reset statistics: ' + error.message);
     }
 }
 
-// Update reset button click handler
+// Update the setupResetButton function
 function setupResetButton() {
-    const resetButton = document.getElementById('reset-stats-btn');
-    if (resetButton) {
-        resetButton.addEventListener('click', () => {
-            if (confirm('Are you sure you want to reset all player stats? This cannot be undone.')) {
-                if (authToken) {
-                    resetStats();
-                } else {
-                    showLoginModal();
-                }
-            }
-        });
+    const resetBtn = document.getElementById('reset-stats-btn');
+    const blackjackResetBtn = document.getElementById('blackjack-reset-stats-btn');
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => resetAllStats('poker'));
+    }
+    if (blackjackResetBtn) {
+        blackjackResetBtn.addEventListener('click', () => resetAllStats('blackjack'));
     }
 }
 
+// Transfer Modal Functions
 function showTransferModal(playerId) {
     currentTransferFrom = playerId;
-    selectedBuyer = null;
     document.getElementById('transferModal').style.display = 'block';
-    document.getElementById('transferAmount').value = '';
+    document.getElementById('transferAmount').value = ''; // Clear previous amount
+    selectedBuyer = null; // Reset selected buyer
     
     // Populate buyer list
     const buyerList = document.getElementById('buyerList');
@@ -813,20 +971,359 @@ async function handleTransfer(event) {
     }
 }
 
-// Update the createPlayerElement function to include the transfer button
-function createPlayerElement(player) {
-    const playerDiv = document.createElement('div');
-    playerDiv.className = 'player-item';
-    playerDiv.innerHTML = `
-        <div class="player-info">
-            <span class="player-name">${player.name}</span>
-            <span class="player-buyin">$${player.buyin}</span>
-        </div>
-        <div class="player-controls">
-            <button onclick="handleRebuy('${player.name}')" class="session-btn">Rebuy</button>
-            <button onclick="handleCashout('${player.name}')" class="session-btn">Cash Out</button>
-            ${player.name !== currentUserId ? `<button onclick="showTransferModal('${player.name}')" class="session-btn">Buy from Player</button>` : ''}
-        </div>
-    `;
-    return playerDiv;
+// Edit Stats Functionality
+function showEditStatsModal(gameType) {
+    if (!isAdmin) {
+        pendingAction = { type: 'edit', gameType };
+        showLoginModal();
+        return;
+    }
+    
+    const modal = document.getElementById('editStatsModal');
+    const playerSelect = document.getElementById('editPlayerSelect');
+    const table = document.getElementById(gameType === 'poker' ? 'allTimeStatsTable' : 'blackjack-allTimeStatsTable');
+    
+    // Only clear and repopulate if there are players in the table
+    if (table && table.querySelector('tbody tr')) {
+        // Clear existing options
+        playerSelect.innerHTML = '';
+        
+        // Add options for each player in the table
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const playerName = row.cells[0].textContent;
+            const option = document.createElement('option');
+            option.value = playerName;
+            option.textContent = playerName;
+            playerSelect.appendChild(option);
+        });
+        
+        // Show the modal
+        modal.style.display = 'block';
+    } else {
+        alert('No players found in the statistics table.');
+    }
+}
+
+function closeEditStatsModal() {
+    const modal = document.getElementById('editStatsModal');
+    modal.style.display = 'none';
+}
+
+function populateEditForm(playerName, gameType) {
+    const table = document.getElementById(gameType === 'poker' ? 'allTimeStatsTable' : 'blackjack-allTimeStatsTable');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    for (const row of rows) {
+        if (row.cells[0].textContent === playerName) {
+            document.getElementById('editTotalSessions').value = row.cells[1].textContent;
+            document.getElementById('editTotalBuyins').value = parseFloat(row.cells[2].textContent.replace('$', ''));
+            document.getElementById('editTotalCashouts').value = parseFloat(row.cells[3].textContent.replace('$', ''));
+            document.getElementById('editBiggestWin').value = parseFloat(row.cells[5].textContent.replace('$', ''));
+            break;
+        }
+    }
+}
+
+// Function to load all-time stats
+async function loadAllTimeStats(gameType) {
+    try {
+        const response = await fetch(`${API_URL}/players`);
+        const players = await response.json();
+        
+        const tableBody = document.getElementById(gameType === 'poker' ? 'allTimeStatsBody' : 'blackjack-allTimeStatsBody');
+        tableBody.innerHTML = '';
+        
+        players.forEach(player => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${player.name}</td>
+                <td>${player.stats.totalSessions}</td>
+                <td>$${player.stats.totalBuyins.toFixed(2)}</td>
+                <td>$${player.stats.totalCashouts.toFixed(2)}</td>
+                <td class="${player.stats.netProfit >= 0 ? 'profit' : 'loss'}">$${player.stats.netProfit.toFixed(2)}</td>
+                <td class="profit">$${(player.stats.biggestWin || 0).toFixed(2)}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading all-time stats:', error);
+        alert('Error loading statistics. Please refresh the page.');
+    }
+}
+
+// Update the toggleBanker function
+function toggleBanker(playerName) {
+    // Find the player
+    const player = sessionPlayers.find(p => p.name === playerName);
+    if (!player) return;
+
+    // If player is already banker, do nothing
+    if (player.isBanker) return;
+
+    // Check if any other player is already banker
+    const hasBanker = sessionPlayers.some(p => p.isBanker);
+    if (hasBanker) return;
+
+    // Set new banker
+    player.isBanker = true;
+
+    // Update UI
+    renderPlayerList();
+    saveSessionState();
+}
+
+// End Session Modal Functions
+function showEndSessionModal() {
+    const modal = document.getElementById('endSessionModal');
+    const playersContainer = document.getElementById('endSessionPlayers');
+    
+    // Clear previous content
+    playersContainer.innerHTML = '';
+    
+    // Find the banker
+    const banker = sessionPlayers.find(p => p.isBanker);
+    const nonBankers = sessionPlayers.filter(p => !p.isBanker);
+    
+    // Create cashout form for each non-banker player
+    nonBankers.forEach(player => {
+        const playerForm = document.createElement('div');
+        playerForm.className = 'player-cashout-form';
+        playerForm.innerHTML = `
+            <div class="form-group">
+                <label for="cashout-${player.name}">${player.name} (Current Buy-in: $${player.buyin})</label>
+                <div class="cashout-controls">
+                    <input type="number" id="cashout-${player.name}" 
+                           placeholder="Enter cashout amount" required min="0" step="1">
+                </div>
+            </div>
+        `;
+        playersContainer.appendChild(playerForm);
+    });
+
+    // Add banker info section
+    if (banker) {
+        const bankerInfo = document.createElement('div');
+        bankerInfo.className = 'banker-info';
+        bankerInfo.innerHTML = `
+            <div class="form-group">
+                <h3>${banker.name} (Banker)</h3>
+                <p>Total Buy-ins: $${sessionStats.totalBuyins}</p>
+                <p>Total Cash-outs: $${sessionStats.totalCashouts}</p>
+                <p>Bank Balance: $${sessionStats.totalBuyins - sessionStats.totalCashouts}</p>
+            </div>
+        `;
+        playersContainer.appendChild(bankerInfo);
+    }
+    
+    modal.style.display = 'block';
+}
+
+function closeEndSessionModal() {
+    document.getElementById('endSessionModal').style.display = 'none';
+}
+
+async function processEndSessionCashouts() {
+    const playersContainer = document.getElementById('endSessionPlayers');
+    const forms = playersContainer.querySelectorAll('.player-cashout-form');
+    let hasError = false;
+
+    // Process cashouts for non-banker players
+    for (const form of forms) {
+        const input = form.querySelector('input[type="number"]');
+        const amount = parseFloat(input.value);
+        const playerName = input.id.replace('cashout-', '');
+
+        if (isNaN(amount) || amount < 0) {
+            alert(`Please enter a valid cashout amount for ${playerName} (must be 0 or greater)`);
+            hasError = true;
+            break;
+        }
+
+        try {
+            await handleCashout(playerName, amount);
+        } catch (error) {
+            alert(`Error processing cashout for ${playerName}: ${error.message}`);
+            hasError = true;
+            break;
+        }
+    }
+
+    if (!hasError) {
+        // Handle banker's final cashout
+        const banker = sessionPlayers.find(p => p.isBanker);
+        if (banker) {
+            const bankBalance = sessionStats.totalBuyins - sessionStats.totalCashouts;
+            try {
+                await handleCashout(banker.name, bankBalance);
+            } catch (error) {
+                alert(`Error processing banker's final cashout: ${error.message}`);
+                hasError = true;
+            }
+        }
+
+        if (!hasError) {
+            closeEndSessionModal();
+            endSession();
+        }
+    }
+}
+
+function endSession() {
+    const startBtn = document.getElementById('start-session-btn');
+    const endBtn = document.getElementById('end-session-btn');
+    
+    sessionStats.endTime = new Date();
+    startBtn.disabled = false;
+    endBtn.disabled = true;
+    document.getElementById('add-player-form').style.display = 'none';
+    
+    // Reset session
+    sessionPlayers = [];
+    sessionStats = {
+        totalBuyins: 0,
+        totalCashouts: 0,
+        startTime: null,
+        endTime: null
+    };
+    updateSessionStats();
+    localStorage.removeItem('pokerSession'); // Clear saved session
+}
+
+async function handleAddMoney(playerName, amount) {
+    try {
+        console.log('=== Add Money Process Started ===');
+        console.log('Player:', playerName);
+        console.log('Amount:', amount);
+
+        // Validate amount is not negative
+        if (amount < 0) {
+            console.error('Invalid add money amount:', amount);
+            throw new Error('Add money amount cannot be negative');
+        }
+
+        // Update session player's buyin
+        const sessionPlayer = sessionPlayers.find(p => p.name === playerName);
+        if (!sessionPlayer) {
+            console.error('Player not found in session:', playerName);
+            throw new Error('Player not found in current session');
+        }
+
+        console.log('Current Player State:', {
+            name: sessionPlayer.name,
+            buyin: sessionPlayer.buyin,
+            currentCashout: sessionPlayer.cashout || 0
+        });
+
+        // Update the player's buyin amount
+        sessionPlayer.buyin += amount;
+        sessionStats.totalBuyins += amount;
+        
+        console.log('Updated Session Stats:', {
+            totalBuyins: sessionStats.totalBuyins,
+            totalCashouts: sessionStats.totalCashouts
+        });
+        
+        // Update player's stats in database
+        const stats = playerStats[playerName];
+        // Only increment totalBuyins if this is their first buy-in for the session
+        if (!sessionPlayer.hasAddedMoney) {
+            stats.totalBuyins += amount;
+            sessionPlayer.hasAddedMoney = true;
+        }
+        stats.netProfit = stats.totalCashouts - stats.totalBuyins;
+
+        console.log('Updated Player Stats:', {
+            name: playerName,
+            totalBuyins: stats.totalBuyins,
+            totalCashouts: stats.totalCashouts,
+            netProfit: stats.netProfit
+        });
+
+        await updatePlayerStats(playerName, stats);
+
+        // Update UI
+        renderPlayerList();
+        updateSessionStats();
+        renderAllTimeStats();
+        updateAllTimeStats();
+        
+        saveSessionState(); // Save state after adding money
+        console.log('=== Add Money Process Completed ===');
+    } catch (error) {
+        console.error('Error processing add money:', error);
+        alert('Failed to process add money: ' + error.message);
+    }
+}
+
+async function removePlayer(playerName) {
+    try {
+        console.log('=== Remove Player Process Started ===');
+        console.log('Player:', playerName);
+
+        // Find the player in the session
+        const sessionPlayer = sessionPlayers.find(p => p.name === playerName);
+        if (!sessionPlayer) {
+            console.error('Player not found in session:', playerName);
+            throw new Error('Player not found in current session');
+        }
+
+        console.log('Current Player State:', {
+            name: sessionPlayer.name,
+            buyin: sessionPlayer.buyin,
+            currentCashout: sessionPlayer.cashout || 0
+        });
+
+        // Update session stats
+        sessionStats.totalBuyins -= sessionPlayer.buyin;
+        if (sessionPlayer.cashout) {
+            sessionStats.totalCashouts -= sessionPlayer.cashout;
+        }
+        
+        console.log('Updated Session Stats:', {
+            totalBuyins: sessionStats.totalBuyins,
+            totalCashouts: sessionStats.totalCashouts
+        });
+        
+        // Update player's stats in database
+        const stats = playerStats[playerName];
+        stats.totalBuyins -= sessionPlayer.buyin;
+        if (sessionPlayer.cashout) {
+            stats.totalCashouts -= sessionPlayer.cashout;
+        }
+        stats.netProfit = stats.totalCashouts - stats.totalBuyins;
+
+        // Calculate loss for this session
+        const sessionLoss = sessionPlayer.buyin - (sessionPlayer.cashout || 0);
+        if (sessionLoss > 0 && sessionLoss > (stats.biggestLoss || 0)) {
+            stats.biggestLoss = sessionLoss;
+            console.log('New biggest loss recorded:', stats.biggestLoss);
+        }
+
+        console.log('Updated Player Stats:', {
+            name: playerName,
+            totalBuyins: stats.totalBuyins,
+            totalCashouts: stats.totalCashouts,
+            netProfit: stats.netProfit,
+            biggestWin: stats.biggestWin,
+            biggestLoss: stats.biggestLoss
+        });
+
+        await updatePlayerStats(playerName, stats);
+
+        // Remove player from session
+        sessionPlayers = sessionPlayers.filter(p => p.name !== playerName);
+        
+        // Update UI
+        renderPlayerList();
+        updateSessionStats();
+        renderAllTimeStats();
+        updateAllTimeStats();
+        
+        saveSessionState(); // Save state after removing player
+        console.log('=== Remove Player Process Completed ===');
+    } catch (error) {
+        console.error('Error removing player:', error);
+        alert('Failed to remove player: ' + error.message);
+    }
 } 

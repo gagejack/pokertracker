@@ -13,61 +13,130 @@
     <header>
         <h1><img src="/images/pokertracker.png" alt="Poker Tracker Icon" style="height: 1.5em; width: auto; vertical-align: middle;"> Poker Tracker</h1>
     </header>
-    <main>
-        <section id="session-controls">
-            <button id="start-session-btn" class="session-btn">Start Session</button>
-            <button id="end-session-btn" class="session-btn" disabled>End Session</button>
-        </section>
 
-        <section id="session-stats">
-            <!-- Session statistics will be displayed here -->
-        </section>
+    <!-- Navigation Tabs -->
+    <nav class="game-tabs">
+        <button class="tab-btn active" data-tab="poker">Poker</button>
+        <button class="tab-btn" data-tab="blackjack">Blackjack</button>
+    </nav>
 
-        <section id="add-player-form">
-            <form id="player-form" autocomplete="off">
-                <label for="player-name" style="display:none;">Player Name</label>
-                <input type="text" id="player-name" name="player-name" placeholder="Player Name" required autocomplete="off">
-                <div id="buyin-controls" style="display:flex;align-items:center;margin:0.5rem 0;gap:0.5rem;">
-                    <span id="buyin-amount" style="min-width:2.5em;text-align:right;font-weight:bold;">$0</span>
-                    <button type="button" class="buyin-btn" data-inc="1">+1</button>
-                    <button type="button" class="buyin-btn" data-inc="5">+5</button>
-                    <button type="button" class="buyin-btn" data-inc="10">+10</button>
-                    <button type="button" class="buyin-btn" data-inc="25">+25</button>
-                    <button type="button" class="buyin-clear-btn" id="buyin-clear-btn">Clear</button>
-                </div>
-                <button type="submit" id="add-player-btn" class="session-btn">Add Player</button>
-                <div id="player-suggestions" class="autocomplete-suggestions"></div>
-            </form>
-        </section>
+    <!-- Poker Content -->
+    <div id="poker-content" class="game-content active">
+        <main>
+            <section id="session-controls">
+                <button id="start-session-btn" class="session-btn">Start Session</button>
+                <button id="end-session-btn" class="session-btn" disabled>End Session</button>
+            </section>
 
-        <section id="player-list">
-            <!-- Player list will be rendered here -->
-        </section>
+            <section id="session-stats">
+                <!-- Session statistics will be displayed here -->
+            </section>
 
-       
-    </main>
-    <div id="allTimeStats" class="stats-section">
-        <h2>All-Time Player Statistics</h2>
-        <button id="reset-stats-btn" class="session-btn" style="background: #dc3545; margin-bottom: 1rem;">Reset All Stats</button>
-        <div class="stats-table-container">
-            <table id="allTimeStatsTable">
-                <thead>
-                    <tr>
-                        <th>Player</th>
-                        <th>Total Sessions</th>
-                        <th>Total Buy-ins</th>
-                        <th>Total Cash-outs</th>
-                        <th>Net Profit</th>
-                        <th>Biggest Win</th>
-                        <th>Biggest Loss</th>
-                    </tr>
-                </thead>
-                <tbody id="allTimeStatsBody">
-                </tbody>
-            </table>
+            <section id="add-player-form">
+                <form id="player-form" autocomplete="off">
+                    <label for="player-name" style="display:none;">Player Name</label>
+                    <input type="text" id="player-name" name="player-name" placeholder="Player Name" required autocomplete="off">
+                    <div id="buyin-controls" style="display:flex;align-items:center;margin:0.5rem 0;gap:0.5rem;">
+                        <span id="buyin-amount" style="min-width:2.5em;text-align:right;font-weight:bold;">$0</span>
+                        <button type="button" class="buyin-btn" data-inc="1">+1</button>
+                        <button type="button" class="buyin-btn" data-inc="5">+5</button>
+                        <button type="button" class="buyin-btn" data-inc="10">+10</button>
+                        <button type="button" class="buyin-btn" data-inc="25">+25</button>
+                        <button type="button" class="buyin-clear-btn" id="buyin-clear-btn">Clear</button>
+                    </div>
+                    <button type="submit" id="add-player-btn" class="session-btn">Add Player</button>
+                    <div id="player-suggestions" class="autocomplete-suggestions"></div>
+                </form>
+            </section>
+
+            <section id="player-list">
+                <!-- Player list will be rendered here -->
+            </section>
+        </main>
+        <div id="allTimeStats" class="stats-section">
+            <h2>All-Time Player Statistics</h2>
+            <div class="stats-controls">
+                <button id="reset-stats-btn" class="session-btn" style="background: #dc3545;">Reset All Stats</button>
+                <button id="edit-stats-btn" class="session-btn" style="background: #007bff;">Edit Stats</button>
+            </div>
+            <div class="stats-table-container">
+                <table id="allTimeStatsTable">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Total Sessions</th>
+                            <th>Total Buy-ins</th>
+                            <th>Total Cash-outs</th>
+                            <th>Net Profit</th>
+                            <th>Biggest Win</th>
+                            <th>Biggest Loss</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allTimeStatsBody">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <!-- Blackjack Content -->
+    <div id="blackjack-content" class="game-content">
+        <main>
+            <section id="blackjack-session-controls">
+                <button id="blackjack-start-session-btn" class="session-btn">Start Session</button>
+                <button id="blackjack-end-session-btn" class="session-btn" disabled>End Session</button>
+            </section>
+
+            <section id="blackjack-session-stats">
+                <!-- Blackjack session statistics will be displayed here -->
+            </section>
+
+            <section id="blackjack-add-player-form">
+                <form id="blackjack-player-form" autocomplete="off">
+                    <label for="blackjack-player-name" style="display:none;">Player Name</label>
+                    <input type="text" id="blackjack-player-name" name="player-name" placeholder="Player Name" required autocomplete="off">
+                    <div id="blackjack-buyin-controls" style="display:flex;align-items:center;margin:0.5rem 0;gap:0.5rem;">
+                        <span id="blackjack-buyin-amount" style="min-width:2.5em;text-align:right;font-weight:bold;">$0</span>
+                        <button type="button" class="buyin-btn" data-inc="1">+1</button>
+                        <button type="button" class="buyin-btn" data-inc="5">+5</button>
+                        <button type="button" class="buyin-btn" data-inc="10">+10</button>
+                        <button type="button" class="buyin-btn" data-inc="25">+25</button>
+                        <button type="button" class="buyin-clear-btn" id="blackjack-buyin-clear-btn">Clear</button>
+                    </div>
+                    <button type="submit" id="blackjack-add-player-btn" class="session-btn">Add Player</button>
+                    <div id="blackjack-player-suggestions" class="autocomplete-suggestions"></div>
+                </form>
+            </section>
+
+            <section id="blackjack-player-list">
+                <!-- Blackjack player list will be rendered here -->
+            </section>
+        </main>
+        <div id="blackjack-allTimeStats" class="stats-section">
+            <h2>All-Time Blackjack Statistics</h2>
+            <div class="stats-controls">
+                <button id="blackjack-reset-stats-btn" class="session-btn" style="background: #dc3545;">Reset All Stats</button>
+                <button id="blackjack-edit-stats-btn" class="session-btn" style="background: #007bff;">Edit Stats</button>
+            </div>
+            <div class="stats-table-container">
+                <table id="blackjack-allTimeStatsTable">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Total Sessions</th>
+                            <th>Total Buy-ins</th>
+                            <th>Total Cash-outs</th>
+                            <th>Net Profit</th>
+                            <th>Biggest Win</th>
+                            <th>Biggest Loss</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blackjack-allTimeStatsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- Admin Login Modal -->
     <div id="loginModal" class="modal" style="display: none;">
@@ -149,5 +218,53 @@
             </form>
         </div>
     </div>
+
+    <!-- Edit Stats Modal -->
+    <div id="editStatsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Edit Player Statistics</h2>
+            <form id="editStatsForm">
+                <div class="form-group">
+                    <label for="editPlayerSelect">Select Player:</label>
+                    <select id="editPlayerSelect" required>
+                        <!-- Player options will be populated here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editTotalSessions">Total Sessions:</label>
+                    <input type="number" id="editTotalSessions" required min="0">
+                </div>
+                <div class="form-group">
+                    <label for="editTotalBuyins">Total Buy-ins:</label>
+                    <input type="number" id="editTotalBuyins" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="editTotalCashouts">Total Cash-outs:</label>
+                    <input type="number" id="editTotalCashouts" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="editBiggestWin">Biggest Win:</label>
+                    <input type="number" id="editBiggestWin" required min="0" step="0.01">
+                </div>
+                <button type="submit" class="session-btn">Update Stats</button>
+                <button type="button" class="session-btn" onclick="closeEditStatsModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- End Session Cashout Modal -->
+    <div id="endSessionModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Cash Out Remaining Players</h2>
+            <div id="endSessionPlayers">
+                <!-- Player cashout forms will be populated here -->
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="session-btn" onclick="processEndSessionCashouts()">Complete Cashouts</button>
+                <button type="button" class="session-btn" onclick="closeEndSessionModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html> 

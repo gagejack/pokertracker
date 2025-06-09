@@ -11,7 +11,8 @@ h2, h3, h4 {
 #add-player-form,
 #player-list,
 #session-stats,
-#alltime-stats {
+#alltime-stats,
+#blackjack-session-controls {
     background: #23272a;
     color: #f3f3f3;
     border-radius: 8px;
@@ -523,16 +524,36 @@ button:disabled {
     background-color: #2c3136;
     font-weight: 600;
     color: #fff;
+    white-space: nowrap;
 }
 
 #allTimeStatsTable tr:hover {
     background-color: #2c3136;
 }
 
+#allTimeStatsTable td:first-child {
+    text-align: left;
+}
+
+#allTimeStatsTable td:nth-child(2) {
+    text-align: center;
+}
+
+#allTimeStatsTable td:nth-child(3),
 #allTimeStatsTable td:nth-child(4),
 #allTimeStatsTable td:nth-child(5),
-#allTimeStatsTable td:nth-child(6),
-#allTimeStatsTable td:nth-child(7) {
+#allTimeStatsTable td:nth-child(6) {
+    text-align: right;
+}
+
+#allTimeStatsTable th:nth-child(2) {
+    text-align: center;
+}
+
+#allTimeStatsTable th:nth-child(3),
+#allTimeStatsTable th:nth-child(4),
+#allTimeStatsTable th:nth-child(5),
+#allTimeStatsTable th:nth-child(6) {
     text-align: right;
 }
 
@@ -554,8 +575,8 @@ button:disabled {
     background: #23272a;
     padding: 2rem;
     border-radius: 8px;
-    width: 90%;
-    max-width: 400px;
+    width: 95%;
+    max-width: 600px;
     position: relative;
     top: 50%;
     left: 50%;
@@ -571,23 +592,29 @@ button:disabled {
 
 .form-group {
     margin-bottom: 1rem;
+    width: 100%;
 }
 
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
+    color: #fff;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 0.8rem;
     border-radius: 4px;
     border: 1px solid #444;
     background: #2c3136;
     color: #fff;
+    font-size: 1.1rem;
+    box-sizing: border-box;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: #0d6efd;
 }
@@ -648,4 +675,317 @@ button:disabled {
     color: #bbb;
     border-color: #888;
     cursor: not-allowed;
+}
+
+/* Game Tabs */
+.game-tabs {
+    display: flex;
+    justify-content: stretch;
+    margin: 0 0 1rem 0;
+    padding: 0;
+    width: 100%;
+    border-bottom: 2px solid #2a2a2a;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.75rem 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    background-color: #1a1a1a;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+    background-color: #2a2a2a;
+    color: #bbb;
+}
+
+.tab-btn.active {
+    background-color: #2a2a2a;
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    font-weight: 600;
+}
+
+/* Game Content */
+.game-content {
+    display: none;
+}
+
+.game-content.active {
+    display: block;
+}
+
+/* Session Controls - Shared between Poker and Blackjack */
+#session-controls,
+#blackjack-session-controls {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #23272a;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#session-controls .session-btn,
+#blackjack-session-controls .session-btn {
+    flex: 1;
+    padding: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #1a7f37;
+    color: white;
+}
+
+#session-controls .session-btn:hover,
+#blackjack-session-controls .session-btn:hover {
+    background: #14662b;
+}
+
+#session-controls .session-btn:disabled,
+#blackjack-session-controls .session-btn:disabled {
+    background: #444;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.stats-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stats-controls .session-btn {
+    flex: 1;
+}
+
+#editStatsModal .modal-content {
+    max-width: 500px;
+}
+
+#editStatsModal .form-group {
+    margin-bottom: 1rem;
+}
+
+#editStatsModal select {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #23272a;
+    color: #f3f3f3;
+    font-size: 1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+}
+
+#editStatsModal input[type="number"] {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #23272a;
+    color: #f3f3f3;
+    font-size: 1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+}
+
+#editStatsModal input[type="number"]:focus,
+#editStatsModal select:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.player-card {
+    background: #2a2a2a;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    width: 100%;
+}
+
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+    flex: 1;
+    max-width: 40%;
+}
+
+.player-info h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.buyin-amount {
+    color: #1a7f37;
+    font-weight: 600;
+    font-size: 1.4rem;
+    background: #1e2b22;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.player-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1;
+}
+
+.banker-btn {
+    background: #2a2a2a;
+    color: #888;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-family: 'Figtree', Arial, sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.banker-btn:hover {
+    background: #3a3a3a;
+    color: #fff;
+}
+
+.banker-btn.active {
+    background: #1a7f37;
+    color: #fff;
+    border-color: #1a7f37;
+}
+
+.banker-btn.active:hover {
+    background: #14662b;
+}
+
+.banker-btn:disabled {
+    background: #2a2a2a;
+    color: #444;
+    border-color: #444;
+    cursor: not-allowed;
+}
+
+.player-stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-label {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.player-cashout-form {
+    background: #2c3136;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.player-cashout-form .form-group {
+    margin-bottom: 0;
+}
+
+.player-cashout-form label {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.cashout-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+@media (max-width: 599px) {
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions .session-btn {
+        width: 100%;
+    }
+}
+
+.banker-info {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.banker-info h3 {
+    color: #4CAF50;
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+}
+
+.banker-info p {
+    margin: 5px 0;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.banker-info p:last-child {
+    font-weight: bold;
+    color: #4CAF50;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 } 
